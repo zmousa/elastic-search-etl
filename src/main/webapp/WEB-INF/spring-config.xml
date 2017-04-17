@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:camel="http://camel.apache.org/schema/spring"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:util="http://www.springframework.org/schema/util" 
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd
+  http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+  http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd
+  http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
+  http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+	<context:component-scan base-package="com.es.controller" />
+	<mvc:annotation-driven />
+
+	
+	<!-- Camel JPA -->
+	<bean id="mysqltestDataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<property name="url" value="jdbc:mysql://localhost:3306/persons" />
+		<property name="username" value="root" />
+		<property name="password" value="root" />
+	</bean>
+    <bean id="entityManagerFactory"
+		class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="dataSource" ref="mysqltestDataSource" />
+		<property name="persistenceUnitName" value="testMysql" />
+		<property name="packagesToScan">
+            <list>
+                <value>com.es.model.person</value>
+            </list>
+        </property>
+	</bean>
+	
+	<bean id="jpa" class="org.apache.camel.component.jpa.JpaComponent">
+		<property name="entityManagerFactory" ref="entityManagerFactory" />
+	</bean>
+	
+	<bean id="aggregateStrategy" class="com.es.camel.DocAggregator"/>
+	<bean id="docRowProcessor" class="com.es.camel.DocRowProcessor" />
+	<bean id="repo" class="org.apache.camel.processor.idempotent.MemoryIdempotentRepository"/>
+  	<bean id="esRoute" class="com.es.camel.ESRouteBuilder"/>
+  	
+	<camel:camelContext id="camelContext">
+		<camel:routeBuilder ref="esRoute"/>
+	</camel:camelContext>
+</beans>
